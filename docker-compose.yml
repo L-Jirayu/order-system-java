@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: food_pg
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: food_order
+      POSTGRES_INITDB_ARGS: --auth=md5
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema_food_order.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_food
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+
+  java-core:
+    build: .
+    container_name: java_core
+    depends_on:
+      - postgres
+    ports:
+      - "9001:9001"
+
+  go-app:
+    build: ../go-app-layer
+    container_name: go_gateway
+    depends_on:
+      - java-core
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
